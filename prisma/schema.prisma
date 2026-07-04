@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id                 String    @id @default(uuid())
+  phoneNumber        String    @unique
+  kraPin             String?   @unique
+  firstName          String?
+  lastName           String?
+  swahiliName        String?   
+  preferredLanguage  String    @default("sw")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  businesses         Business[]
+  transactions       Transaction[]
+  receipts           Receipt[]
+  voiceEntries       VoiceEntry[]
+  debts              Debt[]
+  
+}
+
+model Business {
+  id               String   @id @default(uuid())
+  name             String
+  type             BusinessType
+  tillNumber       String?  @unique
+  paybillNumber    String?  @unique
+  businessType     String   
+  isActive         Boolean  @default(true)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  transactions     Transaction[]
+}
+
+model Transaction {
+  id              String        @id @default(uuid())
+  amount          Float
+  type            TransactionType
+  category        String?       
+  description     String?
+  source          TransactionSource
+  mpesaRef        String?       @unique
+  senderMsisdn    String?       
+  counterparty    String?       
+  isSynced        Boolean       @default(false)
+  businessId      String
+  business        Business      @relation(fields: [businessId], references: [id])
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  receiptId       String?       @unique
+  receipt         Receipt?      
+  voiceEntryId    String?       @unique
+  voiceEntry      VoiceEntry?   
+  createdAt       DateTime      @default(now())
+  
+  debts           Debt[]        
+  paidDebts       Debt[]        @relation("PaidDebts") 
+}
+
+model Receipt {
+  id              String         @id @default(uuid())
+  imageUrl        String
+  totalAmount     Float
+  vatAmount       Float?
+  vendorName      String?
+  receiptNumber   String?
+  extractedText   String?        
+  classifiedCategory String?
+  isConfirmed     Boolean        @default(false)
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  transactionId   String?        @unique
+  transaction     Transaction?   @relation(fields: [transactionId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model VoiceEntry {
+  id              String         @id @default(uuid())
+  audioUrl        String
+  transcript      String?
+  extractedAmount Float?
+  extractedCategory String?
+  extractedCounterparty String?
+  isConfirmed     Boolean        @default(false)
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  transactionId   String?        @unique
+  transaction     Transaction?   @relation(fields: [transactionId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Debt {
+  id                 String        @id @default(uuid())
+  amount             Float
+  description        String?
+  debtorName         String
+  debtorPhone        String?
+  dueDate            DateTime?
+  isPaid             Boolean       @default(false)
+  isReceivable       Boolean       
+  userId             String
+  user               User          @relation(fields: [userId], references: [id])
+  transactionId      String?
+  transaction        Transaction?  @relation(fields: [transactionId], references: [id])
+  paidTransactionId  String?       @unique
+  paidTransaction    Transaction?  @relation("PaidDebts", fields: [paidTransactionId], references: [id])
+  reminderCount      Int           @default(0)
+  lastReminderAt     DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+enum BusinessType {
+  DUKA
+  TAXI
+  TAILOR
+  PRODUCE
+  SALON
+  OTHER
+}
+
+enum TransactionType {
+  SALE
+  EXPENSE
+  TRANSFER
+  LOAN_REPAYMENT
+}
+
+enum TransactionSource {
+  MPESA
+  RECEIPT
+  VOICE
+  TEXT
+  MANUAL
+}
