@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "moduleResolution": "bundler",
-    "module": "esnext",
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
     "lib": ["ES2022"],
     "outDir": "./dist",
     "strict": true,

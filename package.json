@@ -5,7 +5,7 @@
   "description": "WhatsApp-first bookkeeping for Kenyan micro-businesses",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
     "migrate": "prisma migrate deploy",
@@ -22,9 +22,11 @@
     "cors": "^2.8.5",
     "express": "^4.22.2",
     "helmet": "^7.0.0",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.0",
     "node-cron": "^3.0.2",
     "pg": "^8.11.0",
+    "redis": "^6.1.0",
     "winston": "^3.9.0"
   },
   "devDependencies": {
@@ -39,8 +41,11 @@
     "@typescript-eslint/parser": "^5.60.0",
     "dotenv": "^17.4.2",
     "eslint": "^8.43.0",
+    "nodemon": "^3.1.14",
     "prettier": "^2.8.8",
     "prisma": "^7.8.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.0",
     "typescript": "^6.0.3"
   }
 }
