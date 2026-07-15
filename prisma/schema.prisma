@@ -61,10 +61,8 @@ model Transaction {
   business        Business      @relation(fields: [businessId], references: [id])
   userId          String
   user            User          @relation(fields: [userId], references: [id])
-  receiptId       String?       @unique
-  receipt         Receipt?      
-  voiceEntryId    String?       @unique
-  voiceEntry      VoiceEntry?   
+  receipt         Receipt?
+  voiceEntry      VoiceEntry?
   createdAt       DateTime      @default(now())
   
   debts           Debt[]        

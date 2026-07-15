@@ -1,15 +1,13 @@
 import express from "express";
 import dotenv from "dotenv";
-import { PrismaClient } from "./generated/prisma/client.js";
-import { PrismaPg } from "@prisma/adapter-pg";
 import helmet from "helmet";
 import cors from "cors";
 
 dotenv.config();
 
-export const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+import { prisma } from "./db.js";
+import { handleState } from "./services/whatsapp/stateMachine.js";
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -20,9 +18,72 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 //health check
-app.get("/health", (req, res) => {
+app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+app.get("/webhooks/whatsapp", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (
+    mode === "subscribe" &&
+    token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN &&
+    typeof challenge === "string"
+  ) {
+    res.status(200).send(challenge);
+    return;
+  }
+
+  res.sendStatus(403);
+});
+
+app.post("/webhooks/whatsapp", async (req, res) => {
+  res.sendStatus(200);
+
+  for (const message of extractIncomingTextMessages(req.body)) {
+    try {
+      await handleState(message.from, message.text);
+    } catch (error) {
+      console.error("Failed to handle WhatsApp message", error);
+    }
+  }
+});
+
+type IncomingTextMessage = {
+  from: string;
+  text: string;
+};
+
+function extractIncomingTextMessages(payload: unknown): IncomingTextMessage[] {
+  if (!isRecord(payload) || !Array.isArray(payload.entry)) return [];
+
+  const messages: IncomingTextMessage[] = [];
+  for (const entry of payload.entry) {
+    if (!isRecord(entry) || !Array.isArray(entry.changes)) continue;
+
+    for (const change of entry.changes) {
+      const value = isRecord(change) ? change.value : null;
+      if (!isRecord(value) || !Array.isArray(value.messages)) continue;
+
+      for (const rawMessage of value.messages) {
+        if (!isRecord(rawMessage) || rawMessage.type !== "text") continue;
+        const text = isRecord(rawMessage.text) ? rawMessage.text.body : null;
+
+        if (typeof rawMessage.from === "string" && typeof text === "string") {
+          messages.push({ from: rawMessage.from, text });
+        }
+      }
+    }
+  }
+
+  return messages;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
 //start the server
 async function startServer() {
