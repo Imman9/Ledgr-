@@ -182,6 +182,19 @@ type IncomingMessage =
   | { kind: "image"; phoneNumber: string; mediaId: string }
   | { kind: "audio"; phoneNumber: string; mediaId: string };
 
+// Plain `Omit<IncomingMessage, "phoneNumber">` doesn't do what it looks like
+// it does: `keyof` a union only keeps keys common to *every* member (here,
+// just "kind"), so Omit collapses the whole discriminated union down to
+// `{ kind: "text" | "image" | "audio" }` and silently drops `text`/`mediaId`
+// from the type entirely. That's what was causing "Object literal may only
+// specify known properties" on `text`/`mediaId` below, and the mismatched
+// `mediaId is missing` error where extractMessages() re-assembles the full
+// IncomingMessage. A distributive Omit (the `T extends any ? ... : never`
+// trick forces per-member distribution) keeps each variant intact.
+type DistributiveOmit<T, K extends keyof any> = T extends any
+  ? Omit<T, K>
+  : never;
+
 function extractMessages(body: any): IncomingMessage[] {
   const results: IncomingMessage[] = [];
 
@@ -212,7 +225,7 @@ function extractMessages(body: any): IncomingMessage[] {
 
 function parseMessage(
   message: any
-): Omit<IncomingMessage, "phoneNumber"> | null {
+): DistributiveOmit<IncomingMessage, "phoneNumber"> | null {
   switch (message?.type) {
     case "text": {
       const text = message.text?.body;

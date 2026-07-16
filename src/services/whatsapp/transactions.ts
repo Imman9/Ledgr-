@@ -346,9 +346,18 @@ async function runOcr(
     throw new Error(`Google Vision API error: ${response.status}`);
   }
 
-  const data = await response.json();
+  // fetch()'s Response.json() is typed to return Promise<unknown> (not
+  // `any`), so `data?.responses` errors with "Property 'responses' does
+  // not exist on type '{}'" unless we tell TS what shape to expect.
+  const data = (await response.json()) as GoogleVisionResponse;
   const text = data?.responses?.[0]?.fullTextAnnotation?.text;
   return text || null;
+}
+
+interface GoogleVisionResponse {
+  responses?: Array<{
+    fullTextAnnotation?: { text?: string };
+  }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -389,8 +398,12 @@ async function transcribeAudio(
     throw new Error(`Whisper API error: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as WhisperResponse;
   return data?.text || null;
+}
+
+interface WhisperResponse {
+  text?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -402,6 +415,10 @@ interface ExtractedTransaction {
   amount: number;
   description: string;
   category?: string;
+}
+
+interface AnthropicMessagesResponse {
+  content?: Array<{ type: string; text?: string }>;
 }
 
 async function extractTransactionFromText(
@@ -444,9 +461,9 @@ If you cannot confidently determine a transaction (amount and type) from the tex
     throw new Error(`Anthropic API error: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as AnthropicMessagesResponse;
   const rawText = data?.content
-    ?.find((block: any) => block.type === "text")
+    ?.find((block) => block.type === "text")
     ?.text?.trim();
 
   if (!rawText || rawText === "null") {
