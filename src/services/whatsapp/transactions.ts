@@ -1,8 +1,11 @@
 import { prisma } from "../../db.js";
-import { TransactionType, TransactionSource } from "@prisma/client";
+import {
+  TransactionType,
+  TransactionSource,
+} from "../../generated/prisma/enums.js";
 import { sendWhatsAppMessage } from "./messaging .js";
 import { downloadWhatsAppMedia } from "./media.js";
-import { uploadToS3 } from "./media.js";
+import { uploadToS3 } from "./storage.js";
 
 export type Language = "sw" | "en";
 

@@ -239,7 +239,7 @@ export async function handleState(phoneNumber: string, message: string) {
 // ---------------------------------------------------------------------------
 // Find-or-create with race condition handling
 // ---------------------------------------------------------------------------
-async function findOrCreateUser(phoneNumber: string) {
+export async function findOrCreateUser(phoneNumber: string) {
   let user = await prisma.user.findUnique({ where: { phoneNumber } });
   if (user) return user;
 
@@ -502,7 +502,7 @@ async function clearUserStateData(userId: string) {
 // ---------------------------------------------------------------------------
 // Phone number normalization
 // ---------------------------------------------------------------------------
-function normalizePhone(phone: string): string | null {
+export function normalizePhone(phone: string): string | null {
   let normalized = phone.trim().replace(/^\+/, "");
 
   if (normalized.startsWith("0")) {
