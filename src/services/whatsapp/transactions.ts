@@ -3,7 +3,7 @@ import {
   TransactionType,
   TransactionSource,
 } from "../../generated/prisma/enums.js";
-import { sendWhatsAppMessage } from "./messaging .js";
+import { sendWhatsAppMessage } from "./messaging.js";
 import { downloadWhatsAppMedia } from "./media.js";
 import { uploadToS3 } from "./storage.js";
 

@@ -1,10 +1,10 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
 import helmet from "helmet";
-import cors from "cors";
 
 dotenv.config();
 
+import cors from "cors";
 import { prisma } from "./db.js";
 import { handleState } from "./services/whatsapp/stateMachine.js";
 
@@ -29,7 +29,7 @@ app.get("/webhooks/whatsapp", (req, res) => {
 
   if (
     mode === "subscribe" &&
-    token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN &&
+    token === process.env.WHATSAPP_VERIFY_TOKEN &&
     typeof challenge === "string"
   ) {
     res.status(200).send(challenge);

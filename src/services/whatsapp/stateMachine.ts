@@ -1,5 +1,5 @@
 import { prisma } from "../../db.js";
-import { sendWhatsAppMessage } from "./messaging .js";
+import { sendWhatsAppMessage } from "./messaging.js";
 import { Redis } from "ioredis";
 import {
   BusinessType,
