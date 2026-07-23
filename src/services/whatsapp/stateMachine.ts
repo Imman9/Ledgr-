@@ -8,9 +8,7 @@ import {
 } from "../../generated/prisma/enums.js";
 import type { TransactionModel } from "../../generated/prisma/models/Transaction.js";
 
-// ---------------------------------------------------------------------------
 // Redis client
-// ---------------------------------------------------------------------------
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 
 const STATE_TTL_SECONDS = 60 * 60 * 24; // abandon onboarding after 24h, start fresh
@@ -26,13 +24,7 @@ export type UserState =
 export type Language = "sw" | "en";
 
 // const BUSINESS_TYPES = ["duka", "taxi", "tailor", "produce", "salon", "other"];
-
-// ---------------------------------------------------------------------------
 // Bilingual message templates
-// ---------------------------------------------------------------------------
-// Keeping every user-facing string in one place makes it obvious what still
-// needs a translation when a new message is added, and stops language logic
-// from leaking into every handler as ad-hoc if/else branches.
 const MESSAGES = {
   languagePrompt: {
     sw: `🇰🇪 *Karibu LedgerAI!*
@@ -178,9 +170,7 @@ function t(entry: { sw: string; en: string }, lang: Language): string {
   return entry[lang];
 }
 
-// ---------------------------------------------------------------------------
 // Entry point
-// ---------------------------------------------------------------------------
 export async function handleState(phoneNumber: string, message: string) {
   const normalizedPhone = normalizePhone(phoneNumber);
 
@@ -236,16 +226,13 @@ export async function handleState(phoneNumber: string, message: string) {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Find-or-create with race condition handling
-// ---------------------------------------------------------------------------
 export async function findOrCreateUser(phoneNumber: string) {
   let user = await prisma.user.findUnique({ where: { phoneNumber } });
   if (user) return user;
 
   try {
-    // No preferredLanguage set yet — that's the whole point, they haven't
-    // told us. Left unset until handleLanguageSelection writes it.
+    // No preferredLanguage set yet
     user = await prisma.user.create({
       data: { phoneNumber },
     });
@@ -267,12 +254,8 @@ async function safeSend(phoneNumber: string, message: string) {
   }
 }
 
-// ---------------------------------------------------------------------------
 // State handlers
-// ---------------------------------------------------------------------------
 async function handleNewUser(userId: string, phoneNumber: string) {
-  // Bilingual by necessity — we don't know their preference yet, so both
-  // options are shown together, unconditionally, in a single message.
   const combined = `${MESSAGES.languagePrompt.sw}\n\n— — —\n\n${MESSAGES.languagePrompt.en}`;
   await safeSend(phoneNumber, combined);
   await setUserState(userId, "ASKING_LANGUAGE");
@@ -433,10 +416,9 @@ async function handleComplete(
   await logTextTransaction(userId, phoneNumber, message, lang);
 }
 
-// ---------------------------------------------------------------------------
 // Redis-backed state storage (onboarding progress only — preferredLanguage
 // lives in Postgres since it must outlast the 24h onboarding TTL)
-// ---------------------------------------------------------------------------
+
 function stateKey(userId: string) {
   return `onboarding:state:${userId}`;
 }
@@ -499,9 +481,7 @@ async function clearUserStateData(userId: string) {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Phone number normalization
-// ---------------------------------------------------------------------------
 export function normalizePhone(phone: string): string | null {
   let normalized = phone.trim().replace(/^\+/, "");
 
@@ -515,9 +495,7 @@ export function normalizePhone(phone: string): string | null {
   return isValid ? normalized : null;
 }
 
-// ---------------------------------------------------------------------------
 // Text transaction logging and daily summaries
-// ---------------------------------------------------------------------------
 async function sendDailySummary(
   userId: string,
   phoneNumber: string,

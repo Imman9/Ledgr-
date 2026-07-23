@@ -1,12 +1,6 @@
 // ---------------------------------------------------------------------------
 // WhatsApp media download
 // ---------------------------------------------------------------------------
-// WhatsApp doesn't send file bytes in the webhook payload — it sends a
-// `media_id`. You have to make a separate call to fetch a short-lived URL
-// for that media, then a second call to actually download the bytes from
-// that URL. Both steps require your access token.
-//
-// Docs: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
 
 const WHATSAPP_API_VERSION = process.env.WHATSAPP_API_VERSION || "v21.0";
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -48,8 +42,8 @@ export async function downloadWhatsAppMedia(
     throw new Error(`No download URL returned for media ${mediaId}`);
   }
 
-  // Step 2: download the actual bytes. This URL also requires the access
-  // token — it's not a public link, and it expires after a short window.
+  // Step 2: download the actual bytes.
+
   const fileResponse = await fetch(meta.url, {
     headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
   });

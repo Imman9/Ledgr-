@@ -169,10 +169,8 @@ export async function handleReceiptMessage(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Voice note pipeline: download → upload to S3 → transcribe → structured
 // extraction → save VoiceEntry + Transaction, linked together.
-// ---------------------------------------------------------------------------
 export async function handleVoiceMessage(
   phoneNumber: string,
   userId: string,
@@ -261,10 +259,6 @@ export async function handleVoiceMessage(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Typed text messages (e.g. "Niliuza chai 200") — no media, no separate
-// Receipt/VoiceEntry record, just a straight Transaction with source TEXT.
-// ---------------------------------------------------------------------------
 export async function handleTextTransaction(
   phoneNumber: string,
   userId: string,
@@ -313,9 +307,7 @@ export async function handleTextTransaction(
   );
 }
 
-// ---------------------------------------------------------------------------
 // OCR — Google Cloud Vision text detection
-// ---------------------------------------------------------------------------
 async function runOcr(
   imageBuffer: Buffer,
   mimeType: string
@@ -346,9 +338,6 @@ async function runOcr(
     throw new Error(`Google Vision API error: ${response.status}`);
   }
 
-  // fetch()'s Response.json() is typed to return Promise<unknown> (not
-  // `any`), so `data?.responses` errors with "Property 'responses' does
-  // not exist on type '{}'" unless we tell TS what shape to expect.
   const data = (await response.json()) as GoogleVisionResponse;
   const text = data?.responses?.[0]?.fullTextAnnotation?.text;
   return text || null;
@@ -360,9 +349,7 @@ interface GoogleVisionResponse {
   }>;
 }
 
-// ---------------------------------------------------------------------------
 // Speech-to-text — OpenAI Whisper
-// ---------------------------------------------------------------------------
 async function transcribeAudio(
   audioBuffer: Buffer,
   mimeType: string,
@@ -372,8 +359,6 @@ async function transcribeAudio(
     throw new Error("OPENAI_API_KEY not configured");
   }
 
-  // WhatsApp voice notes typically arrive as audio/ogg (Opus codec).
-  // Whisper's API accepts ogg directly, so no transcoding needed.
   const extension = mimeType.includes("ogg") ? "ogg" : "mp3";
 
   const formData = new FormData();
@@ -406,10 +391,6 @@ interface WhisperResponse {
   text?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Structured extraction — Claude turns free text (OCR'd receipt text,
-// voice transcript, or a raw typed message) into a structured transaction.
-// ---------------------------------------------------------------------------
 interface ExtractedTransaction {
   type: TransactionType;
   amount: number;
@@ -506,10 +487,6 @@ If you cannot confidently determine a transaction (amount and type) from the tex
   }
 }
 
-// ---------------------------------------------------------------------------
-// Transaction creation — single place that matches the real schema
-// (userId + businessId both required, enum types, optional category).
-// ---------------------------------------------------------------------------
 async function createTransaction(params: {
   userId: string;
   businessId: string;
